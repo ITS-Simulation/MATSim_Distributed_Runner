@@ -54,7 +54,7 @@ WORKDIR /app
 
 # Cache Busting for Client-Bro
 ADD https://api.github.com/repos/nguyenlamnghia/client-bro/git/refs/tags/scenario_3 /tmp/client_version.json
-RUN git clone -b scenario_3 https://github.com/nguyenlamnghia/client-bro client-bro
+RUN git clone -b scenario_3 --single-branch --depth 1 https://github.com/nguyenlamnghia/client-bro client-bro
 
 WORKDIR /app/client-bro
 RUN pip install .
@@ -65,9 +65,9 @@ USER $MAMBA_USER
 
 # --- STAGE 4: Download jar file ---
 WORKDIR /app/client-bro/matsim
-ARG VERSION=v2.7
-ARG ZIP=dist-2.7.zip
-ARG SHA256=bbe8cb115bb20a2e4f7489baeac66856c029132b5c94576bc5c4df3be8e00df9
+ARG VERSION=v2.9
+ARG ZIP=dist-2.9.zip
+ARG SHA256=102f3b517826251aea5c35d702438b3395acd974607dba4f8e91ac1f2e623caf
 
 # download (cache)
 RUN curl -L -o ${ZIP} \
