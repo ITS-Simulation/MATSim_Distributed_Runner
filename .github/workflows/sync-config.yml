@@ -37,9 +37,17 @@ jobs:
           CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "config.yaml docker-compose.yaml Dockerfile")
           echo "files: $CHANGED"
           
-          echo "dockerfile=$(echo "$CHANGED" | grep -q 'Dockerfile' && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "compose=$(echo "$CHANGED" | grep -q 'docker-compose.yaml' && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "config=$(echo "$CHANGED" | grep -q 'config.yaml' && echo true || echo false)" >> $GITHUB_OUTPUT
+          # If workflow file changed, do a full sync
+          if echo "$CHANGED" | grep -q 'sync-config.yml'; then
+            echo "Workflow file changed - triggering full sync"
+            echo "dockerfile=true" >> $GITHUB_OUTPUT
+            echo "compose=true" >> $GITHUB_OUTPUT
+            echo "config=true" >> $GITHUB_OUTPUT
+          else
+            echo "dockerfile=$(echo "$CHANGED" | grep -q 'Dockerfile' && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "compose=$(echo "$CHANGED" | grep -q 'docker-compose.yaml' && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "config=$(echo "$CHANGED" | grep -q 'config.yaml' && echo true || echo false)" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create README templates
         run: |
