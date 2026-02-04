@@ -1,0 +1,15 @@
+# Runner: i5
+
+[🇻🇳 Tiếng Việt](./README_VI.md)
+
+| Parameter | Value |
+|-----------|-------|
+| Version | v2.10.5 |
+| Scenario | main |
+| CPU | 18.0 |
+| Memory | 5G |
+| Workers | 4 |
+
+```bash
+docker compose up -d --build
+```
