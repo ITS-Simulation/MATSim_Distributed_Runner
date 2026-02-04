@@ -2,4 +2,4 @@
 
 !.gitignore
 !docker-compose.yaml
-!Dockerfile
+!Dockerfile!README*.md
