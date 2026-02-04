@@ -20,7 +20,7 @@ services:
       - worker_volume:/app/client-bro/logs
 
     # Replaces the arguments passed at the end: 192.168.137.138 2
-    command: ["<IP>", "<WORKERS>"]
+    command: ["192.168.137.1", "8"]
 
 # Replaces: docker volume create worker_volume
 
