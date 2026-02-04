@@ -61,9 +61,11 @@ jobs:
 
             # Check if branch exists on remote
             if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
-              echo "  Branch exists, checking out..."
-              git checkout "$BRANCH"
-              git pull origin "$BRANCH"
+              echo "  Branch exists on remote, checking out..."
+              # Delete local branch if exists to avoid conflicts
+              git branch -D "$BRANCH" 2>/dev/null || true
+              git fetch origin "$BRANCH"
+              git checkout -b "$BRANCH" "origin/$BRANCH"
             else
               echo "  Branch does not exist, creating from main..."
               git checkout main
@@ -119,13 +121,17 @@ jobs:
 
               # Check if branch exists on remote
               if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
-                echo "  Branch exists, checking out..."
-                git checkout "$BRANCH"
-                git pull origin "$BRANCH"
+                echo "  Branch exists on remote, checking out..."
+                # Delete local branch if exists to avoid conflicts
+                git branch -D "$BRANCH" 2>/dev/null || true
+                git fetch origin "$BRANCH"
+                git checkout -b "$BRANCH" "origin/$BRANCH"
               else
                 echo "  Branch does not exist, creating from $CORE..."
-                git checkout "$CORE"
-                git pull origin "$CORE"
+                # Ensure we have latest CORE branch
+                git branch -D "$CORE" 2>/dev/null || true
+                git fetch origin "$CORE"
+                git checkout -b "$CORE" "origin/$CORE"
                 git checkout -b "$BRANCH"
               fi
 
