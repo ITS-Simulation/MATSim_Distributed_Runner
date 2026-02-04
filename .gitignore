@@ -7,4 +7,4 @@
 !config.yaml
 !/.github/
 !/.github/workflows/
-!/.github/workflows/*.yml
+!/.github/workflows/*.yml!README*.md
