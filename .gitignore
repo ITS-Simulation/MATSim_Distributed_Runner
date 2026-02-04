@@ -3,4 +3,4 @@
 !.gitignore
 !docker-compose.yaml
 !Dockerfile
-!*.sh
+!*.sh!README*.md
