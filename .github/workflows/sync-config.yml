@@ -138,7 +138,7 @@ jobs:
 
             generate_readme "$BRANCH" "$VERSION" "$SCENARIO" "$CPU" "$MEMORY" "$WORKERS"
             
-            git add Dockerfile docker-compose.yaml README.md README_VI.md
+            git add -f Dockerfile docker-compose.yaml README.md README_VI.md
             if ! git diff --cached --quiet; then
               git commit -m "chore: Sync (CPU: $CPU, Mem: $MEMORY, Workers: $WORKERS)"
               git push origin "$BRANCH"
