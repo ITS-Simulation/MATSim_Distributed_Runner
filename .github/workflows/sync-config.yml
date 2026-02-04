@@ -135,7 +135,7 @@ jobs:
             sed -i "s|command: \[\"[^\"]*\", \"[^\"]*\"\]|command: [\"$IP\", \"$WORKERS\"]|" docker-compose.yaml
 
             VERSION=$(grep -oP 'ARG VERSION=\K[^\s]+' Dockerfile || echo "unknown")
-            SCENARIO=$(grep -oP 'client-bro.*git clone -b \K[^\s]+' Dockerfile || grep -oP 'git clone.*client-bro.*-b \K[^\s]+' Dockerfile || grep 'client-bro' Dockerfile | grep -oP '\-b \K[^\s]+' | head -1 || echo "unknown")
+            SCENARIO=$(grep -oP 'git clone -b \K[^\s]+(?=.* client-bro)' Dockerfile || grep 'client-bro' Dockerfile | grep -oP -- '-b \K[^\s]+' | head -1 || echo "unknown")
 
             generate_readme "$BRANCH" "$VERSION" "$SCENARIO" "$CPU" "$MEMORY" "$WORKERS"
             
