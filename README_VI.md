@@ -5,7 +5,7 @@
 | Thông số | Giá trị |
 |----------|---------|
 | Phiên bản | v2.10.6 |
-| Kịch bản | main |
+| Kịch bản | scenario_7 |
 | CPU | 18.0 |
 | Bộ nhớ | 5G |
 | Worker | 3 |
