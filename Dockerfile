@@ -53,8 +53,8 @@ RUN pip install --no-deps ./genet
 WORKDIR /app
 
 # Cache Busting for Client-Bro
-ADD https://api.github.com/repos/nguyenlamnghia/client-bro/git/refs/tags/scenario_6 /tmp/client_version.json
-RUN git clone -b scenario_6 --single-branch --depth 1 https://github.com/nguyenlamnghia/client-bro client-bro
+ADD https://api.github.com/repos/nguyenlamnghia/client-bro/git/refs/tags/scenario_7 /tmp/client_version.json
+RUN git clone -b scenario_7 --single-branch --depth 1 https://github.com/nguyenlamnghia/client-bro client-bro
 
 WORKDIR /app/client-bro
 RUN pip install .
