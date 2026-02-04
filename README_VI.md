@@ -4,7 +4,7 @@
 
 | Thông số | Giá trị |
 |----------|---------|
-| Phiên bản | v2.10.5 |
+| Phiên bản | v2.10.6 |
 | Kịch bản | main |
 | CPU | 18.0 |
 | Bộ nhớ | 5G |
