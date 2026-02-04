@@ -4,7 +4,7 @@
 
 | Parameter | Value |
 |-----------|-------|
-| Version | v2.10.5 |
+| Version | v2.10.6 |
 | Scenario | main |
 | CPU | 26.0 |
 | Memory | 10G |
