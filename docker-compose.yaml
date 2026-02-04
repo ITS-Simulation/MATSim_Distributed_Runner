@@ -7,8 +7,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "26.0"
-          memory: 10G
+          cpus: "18.0"
+          memory: 5G
 
     # Replaces: --name client_br
     container_name: client_bro
