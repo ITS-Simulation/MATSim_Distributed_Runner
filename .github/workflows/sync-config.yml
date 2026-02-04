@@ -40,6 +40,48 @@ jobs:
           echo "compose=$(echo "$CHANGED" | grep -q 'docker-compose.yaml' && echo true || echo false)" >> $GITHUB_OUTPUT
           echo "config=$(echo "$CHANGED" | grep -q 'config.yaml' && echo true || echo false)" >> $GITHUB_OUTPUT
 
+      - name: Create README templates
+        run: |
+          cat > /tmp/readme_en.template << 'END_TEMPLATE'
+          # Runner: __BRANCH__
+
+          [🇻🇳 Tiếng Việt](./README_VI.md)
+
+          | Parameter | Value |
+          |-----------|-------|
+          | Version | __VERSION__ |
+          | Scenario | __SCENARIO__ |
+          | CPU | __CPU__ |
+          | Memory | __MEMORY__ |
+          | Workers | __WORKERS__ |
+
+          ```bash
+          docker compose up -d --build
+          ```
+          END_TEMPLATE
+
+          cat > /tmp/readme_vi.template << 'END_TEMPLATE'
+          # Runner: __BRANCH__
+
+          [🇺🇸 English](./README.md)
+
+          | Thông số | Giá trị |
+          |----------|---------|
+          | Phiên bản | __VERSION__ |
+          | Kịch bản | __SCENARIO__ |
+          | CPU | __CPU__ |
+          | Bộ nhớ | __MEMORY__ |
+          | Worker | __WORKERS__ |
+
+          ```bash
+          docker compose up -d --build
+          ```
+          END_TEMPLATE
+
+          # Remove leading spaces from templates
+          sed -i 's/^          //' /tmp/readme_en.template
+          sed -i 's/^          //' /tmp/readme_vi.template
+
       - name: Sync to all branches
         run: |
           set -e
@@ -48,13 +90,11 @@ jobs:
           SYNC_COMPOSE="${{ steps.changes.outputs.compose }}"
           SYNC_CONFIG="${{ steps.changes.outputs.config }}"
 
-          # Early exit if nothing to sync
           if [ "$SYNC_DOCKERFILE" = "false" ] && [ "$SYNC_COMPOSE" = "false" ] && [ "$SYNC_CONFIG" = "false" ]; then
             echo "No relevant changes, skipping"
             exit 0
           fi
 
-          # Save template files from main
           git checkout main && git pull origin main
           [ "$SYNC_DOCKERFILE" = "true" ] && cp Dockerfile /tmp/main_Dockerfile
           [ "$SYNC_COMPOSE" = "true" ] && cp docker-compose.yaml /tmp/main_docker_compose.yaml
@@ -62,12 +102,21 @@ jobs:
           IP=$(yq '.ip' config.yaml | tr -d '"')
           CORES=$(yq '.runner | keys | .[]' config.yaml)
 
+          generate_readme() {
+            local BRANCH=$1 VERSION=$2 SCENARIO=$3 CPU=$4 MEMORY=$5 WORKERS=$6
+            
+            cp /tmp/readme_en.template README.md
+            sed -i "s|__BRANCH__|$BRANCH|g; s|__VERSION__|$VERSION|g; s|__SCENARIO__|$SCENARIO|g; s|__CPU__|$CPU|g; s|__MEMORY__|$MEMORY|g; s|__WORKERS__|$WORKERS|g" README.md
+
+            cp /tmp/readme_vi.template README_VI.md
+            sed -i "s|__BRANCH__|$BRANCH|g; s|__VERSION__|$VERSION|g; s|__SCENARIO__|$SCENARIO|g; s|__CPU__|$CPU|g; s|__MEMORY__|$MEMORY|g; s|__WORKERS__|$WORKERS|g" README_VI.md
+          }
+
           update_branch() {
             local BRANCH=$1 CPU=$2 MEMORY=$3 WORKERS=$4
 
             echo "Processing: $BRANCH (CPU: $CPU, Mem: $MEMORY, Workers: $WORKERS)"
 
-            # Checkout or create branch
             if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
               git branch -D "$BRANCH" 2>/dev/null || true
               git fetch origin "$BRANCH"
@@ -77,17 +126,19 @@ jobs:
               git checkout -b "$BRANCH"
             fi
 
-            # Sync files
             [ "$SYNC_DOCKERFILE" = "true" ] && [ -f /tmp/main_Dockerfile ] && cp /tmp/main_Dockerfile Dockerfile
             [ "$SYNC_COMPOSE" = "true" ] && [ -f /tmp/main_docker_compose.yaml ] && cp /tmp/main_docker_compose.yaml docker-compose.yaml
 
-            # Update config values (always apply to ensure consistency)
             sed -i "s|cpus: \"[^\"]*\"|cpus: \"$CPU\"|" docker-compose.yaml
             sed -i "s|memory: [^ ]*|memory: $MEMORY|" docker-compose.yaml
             sed -i "s|command: \[\"[^\"]*\", \"[^\"]*\"\]|command: [\"$IP\", \"$WORKERS\"]|" docker-compose.yaml
 
-            # Commit and push only if changed
-            git add Dockerfile docker-compose.yaml
+            VERSION=$(grep -oP 'ARG VERSION=\K[^\s]+' Dockerfile || echo "unknown")
+            SCENARIO=$(grep -oP 'git clone -b \K[^\s]+' Dockerfile | head -1 || echo "unknown")
+
+            generate_readme "$BRANCH" "$VERSION" "$SCENARIO" "$CPU" "$MEMORY" "$WORKERS"
+
+            git add Dockerfile docker-compose.yaml README.md README_VI.md
             if ! git diff --cached --quiet; then
               git commit -m "chore: Sync (CPU: $CPU, Mem: $MEMORY, Workers: $WORKERS)"
               git push origin "$BRANCH"
@@ -99,7 +150,6 @@ jobs:
             git checkout main
           }
 
-          # Phase 1: Normal branches
           echo "=== Phase 1: Normal branches ==="
           for CORE in $CORES; do
             CPU=$(yq ".runner.$CORE.hw.cpu" config.yaml)
@@ -108,7 +158,6 @@ jobs:
             update_branch "$CORE" "$CPU" "$MEMORY" "$WORKERS"
           done
 
-          # Phase 2: Derived branches
           echo "=== Phase 2: Derived branches ==="
           for CORE in $CORES; do
             CPU=$(yq ".runner.$CORE.hw.cpu" config.yaml)
