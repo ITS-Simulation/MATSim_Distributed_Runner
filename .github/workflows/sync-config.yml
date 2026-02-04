@@ -54,15 +54,18 @@ jobs:
           echo "=== PHASE 1: Processing normal branches ==="
 
           for CORE in $CORES; do
-            WORKERS=$(yq ".runner.$CORE.normal" config.yaml)
+            # Read hardware limits for this core
+            CPU=$(yq ".runner.$CORE.hw.cpu" config.yaml)
+            MEMORY=$(yq ".runner.$CORE.hw.memory" config.yaml | tr -d '"')
+            WORKERS=$(yq ".runner.$CORE.workers.normal" config.yaml)
             BRANCH="$CORE"
 
-            echo "Processing normal branch: $BRANCH (Workers: $WORKERS)"
+            echo "Processing normal branch: $BRANCH"
+            echo "  CPU: $CPU, Memory: $MEMORY, Workers: $WORKERS"
 
             # Check if branch exists on remote
             if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
               echo "  Branch exists on remote, checking out..."
-              # Delete local branch if exists to avoid conflicts
               git branch -D "$BRANCH" 2>/dev/null || true
               git fetch origin "$BRANCH"
               git checkout -b "$BRANCH" "origin/$BRANCH"
@@ -77,13 +80,15 @@ jobs:
             cp /tmp/main_docker_compose.yaml docker-compose.yaml
             echo "  Copied main files"
 
-            # Update docker-compose.yaml command line
+            # Update docker-compose.yaml with all values
+            sed -i "s|cpus: \"[^\"]*\"|cpus: \"$CPU\"|" docker-compose.yaml
+            sed -i "s|memory: [^ ]*|memory: $MEMORY|" docker-compose.yaml
             sed -i "s|command: \[\"[^\"]*\", \"[^\"]*\"\]|command: [\"$IP\", \"$WORKERS\"]|" docker-compose.yaml
 
             # Commit and push if there are changes
             git add Dockerfile docker-compose.yaml
             if ! git diff --cached --quiet; then
-              git commit -m "chore: Update config (IP: $IP, Workers: $WORKERS)"
+              git commit -m "chore: Update config (CPU: $CPU, Mem: $MEMORY, Workers: $WORKERS)"
               git push origin "$BRANCH"
               echo "  ✓ Updated and pushed $BRANCH"
             else
@@ -105,8 +110,12 @@ jobs:
           echo "=== PHASE 2: Processing derived branches ==="
 
           for CORE in $CORES; do
-            # Get all classes for this core
-            CLASSES=$(yq ".runner.$CORE | keys | .[]" config.yaml)
+            # Read hardware limits for this core (same for all worker classes)
+            CPU=$(yq ".runner.$CORE.hw.cpu" config.yaml)
+            MEMORY=$(yq ".runner.$CORE.hw.memory" config.yaml | tr -d '"')
+
+            # Get all worker classes for this core
+            CLASSES=$(yq ".runner.$CORE.workers | keys | .[]" config.yaml)
 
             for CLASS in $CLASSES; do
               # Skip normal class (already processed in Phase 1)
@@ -114,21 +123,20 @@ jobs:
                 continue
               fi
 
-              WORKERS=$(yq ".runner.$CORE.$CLASS" config.yaml)
+              WORKERS=$(yq ".runner.$CORE.workers.$CLASS" config.yaml)
               BRANCH="$CORE-$CLASS"
 
-              echo "Processing derived branch: $BRANCH (Workers: $WORKERS)"
+              echo "Processing derived branch: $BRANCH"
+              echo "  CPU: $CPU, Memory: $MEMORY, Workers: $WORKERS"
 
               # Check if branch exists on remote
               if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
                 echo "  Branch exists on remote, checking out..."
-                # Delete local branch if exists to avoid conflicts
                 git branch -D "$BRANCH" 2>/dev/null || true
                 git fetch origin "$BRANCH"
                 git checkout -b "$BRANCH" "origin/$BRANCH"
               else
                 echo "  Branch does not exist, creating from $CORE..."
-                # Ensure we have latest CORE branch
                 git branch -D "$CORE" 2>/dev/null || true
                 git fetch origin "$CORE"
                 git checkout -b "$CORE" "origin/$CORE"
@@ -140,13 +148,15 @@ jobs:
               cp /tmp/main_docker_compose.yaml docker-compose.yaml
               echo "  Copied main files"
 
-              # Update docker-compose.yaml command line
+              # Update docker-compose.yaml with all values
+              sed -i "s|cpus: \"[^\"]*\"|cpus: \"$CPU\"|" docker-compose.yaml
+              sed -i "s|memory: [^ ]*|memory: $MEMORY|" docker-compose.yaml
               sed -i "s|command: \[\"[^\"]*\", \"[^\"]*\"\]|command: [\"$IP\", \"$WORKERS\"]|" docker-compose.yaml
 
               # Commit and push if there are changes
               git add Dockerfile docker-compose.yaml
               if ! git diff --cached --quiet; then
-                git commit -m "chore: Update config (IP: $IP, Workers: $WORKERS)"
+                git commit -m "chore: Update config (CPU: $CPU, Mem: $MEMORY, Workers: $WORKERS)"
                 git push origin "$BRANCH"
                 echo "  ✓ Updated and pushed $BRANCH"
               else
