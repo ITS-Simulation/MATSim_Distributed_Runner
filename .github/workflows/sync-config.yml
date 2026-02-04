@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - template
     paths:
       - 'config.yaml'
       - 'docker-compose.yaml'
@@ -31,13 +30,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Sync config to all branches
+      - name: Sync to all branches
         run: |
           set -e
 
-          # Checkout main to read config
+          # Already on main, save template files
           git checkout main
           git pull origin main
+          cp Dockerfile /tmp/main_Dockerfile
+          cp docker-compose.yaml /tmp/main_docker_compose.yaml
+          echo "Saved main files for propagation"
 
           # Read IP from config.yaml
           IP=$(yq '.ip' config.yaml | tr -d '"')
@@ -63,19 +65,23 @@ jobs:
               git checkout "$BRANCH"
               git pull origin "$BRANCH"
             else
-              echo "  Branch does not exist, creating from template..."
-              git checkout template
-              git pull origin template
+              echo "  Branch does not exist, creating from main..."
+              git checkout main
               git checkout -b "$BRANCH"
             fi
+
+            # Copy main files (Dockerfile + docker-compose.yaml)
+            cp /tmp/main_Dockerfile Dockerfile
+            cp /tmp/main_docker_compose.yaml docker-compose.yaml
+            echo "  Copied main files"
 
             # Update docker-compose.yaml command line
             sed -i "s|command: \[\"[^\"]*\", \"[^\"]*\"\]|command: [\"$IP\", \"$WORKERS\"]|" docker-compose.yaml
 
             # Commit and push if there are changes
-            if ! git diff --quiet docker-compose.yaml; then
-              git add docker-compose.yaml
-              git commit -m "chore: Update docker-compose config (IP: $IP, Workers: $WORKERS)"
+            git add Dockerfile docker-compose.yaml
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: Update config (IP: $IP, Workers: $WORKERS)"
               git push origin "$BRANCH"
               echo "  ✓ Updated and pushed $BRANCH"
             else
@@ -123,13 +129,18 @@ jobs:
                 git checkout -b "$BRANCH"
               fi
 
+              # Copy main files (Dockerfile + docker-compose.yaml)
+              cp /tmp/main_Dockerfile Dockerfile
+              cp /tmp/main_docker_compose.yaml docker-compose.yaml
+              echo "  Copied main files"
+
               # Update docker-compose.yaml command line
               sed -i "s|command: \[\"[^\"]*\", \"[^\"]*\"\]|command: [\"$IP\", \"$WORKERS\"]|" docker-compose.yaml
 
               # Commit and push if there are changes
-              if ! git diff --quiet docker-compose.yaml; then
-                git add docker-compose.yaml
-                git commit -m "chore: Update docker-compose config (IP: $IP, Workers: $WORKERS)"
+              git add Dockerfile docker-compose.yaml
+              if ! git diff --cached --quiet; then
+                git commit -m "chore: Update config (IP: $IP, Workers: $WORKERS)"
                 git push origin "$BRANCH"
                 echo "  ✓ Updated and pushed $BRANCH"
               else
@@ -146,4 +157,4 @@ jobs:
             done
           done
 
-          echo "✓ Config sync completed"
+          echo "✓ Sync completed"
