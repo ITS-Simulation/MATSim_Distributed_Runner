@@ -5,7 +5,7 @@
 | Parameter | Value |
 |-----------|-------|
 | Version | v2.10.6 |
-| Scenario | scenario_7 |
+| Scenario | scenario_8 |
 | CPU | 18.0 |
 | Memory | 5G |
 | Workers | 2 |
