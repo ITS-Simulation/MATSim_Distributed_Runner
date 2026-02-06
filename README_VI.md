@@ -5,7 +5,7 @@
 | Thông số | Giá trị |
 |----------|---------|
 | Phiên bản | v2.10.6 |
-| Kịch bản | scenario_8 |
+| Kịch bản | scenario_9 |
 | CPU | 26.0 |
 | Bộ nhớ | 10G |
 | Worker | 4 |
