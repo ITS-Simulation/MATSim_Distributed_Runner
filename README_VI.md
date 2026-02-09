@@ -5,7 +5,7 @@
 | Thông số | Giá trị |
 |----------|---------|
 | Phiên bản | v2.10.6 |
-| Kịch bản | scenario_9 |
+| Kịch bản | v2.0.0 |
 | CPU | 18.0 |
 | Bộ nhớ | 5G |
 | Worker | 4 |
