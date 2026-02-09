@@ -65,9 +65,9 @@ USER $MAMBA_USER
 
 # --- STAGE 4: Download jar file ---
 WORKDIR /app/client-bro/matsim
-ARG VERSION=v2.10.6
-ARG ZIP=dist-2.10.6.zip
-ARG SHA256=30b2b210dc973e15750336e95d12b27a0077b7432d5fa57fa13075c8ef61ecbf
+ARG VERSION=v2.12
+ARG ZIP=dist-2.12.zip
+ARG SHA256=254de11fa742805e7b2e7f300eaae83ec01b8d9afdc60bcdaaea488b9026d3a6
 
 # download (cache)
 RUN curl -L -o ${ZIP} \
