@@ -5,7 +5,7 @@
 | Parameter | Value |
 |-----------|-------|
 | Version | v2.12.5 |
-| Scenario | v2.1.0 |
+| Scenario | v2.2.0 |
 | CPU | 26.0 |
 | Memory | 10G |
 | Workers | 4 |
