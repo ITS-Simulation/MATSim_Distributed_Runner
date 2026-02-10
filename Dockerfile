@@ -41,7 +41,7 @@ RUN git clone -b main https://github.com/arup-group/genet genet
 
 # Install requirements
 RUN micromamba install -y -n base -c conda-forge -c city-modelling-lab \
-    python=3.11 "proj>=9.3" pip coin-or-cbc \
+    python=3.11 "proj>=9.3" pip coin-or-cbc "setuptools>=68,<74" \
     --file ./genet/requirements/base.txt && \
     micromamba clean --all --yes
 
