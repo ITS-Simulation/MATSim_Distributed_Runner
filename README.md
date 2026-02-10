@@ -4,7 +4,7 @@
 
 | Parameter | Value |
 |-----------|-------|
-| Version | v2.12.5 |
+| Version | v2.13 |
 | Scenario | v2.3.0 |
 | CPU | 18.0 |
 | Memory | 5G |
