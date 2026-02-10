@@ -53,8 +53,8 @@ RUN pip install --no-deps ./genet
 WORKDIR /app
 
 # Cache Busting for Client-Bro
-ADD https://api.github.com/repos/nguyenlamnghia/client-bro/git/refs/tags/v2.1.0 /tmp/client_version.json
-RUN git clone -b v2.1.0 --single-branch --depth 1 https://github.com/nguyenlamnghia/client-bro client-bro
+ADD https://api.github.com/repos/nguyenlamnghia/client-bro/git/refs/tags/v2.2.0 /tmp/client_version.json
+RUN git clone -b v2.2.0 --single-branch --depth 1 https://github.com/nguyenlamnghia/client-bro client-bro
 
 WORKDIR /app/client-bro
 RUN pip install .
@@ -83,4 +83,5 @@ WORKDIR /app/client-bro
 
 ENTRYPOINT ["micromamba", "run", "-n", "base", "client-bro"]
 CMD ["localhost", "proccess_number"]
+
 
