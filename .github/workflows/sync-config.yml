@@ -183,8 +183,7 @@ jobs:
               echo "  ⚠ Skipping $CORE: no 'normal' worker count defined"
               continue
             fi
-            EXPECTED_BRANCHES="$EXPECTED_BRANCHES
-$CORE"
+            EXPECTED_BRANCHES="$EXPECTED_BRANCHES $CORE"
             update_branch "$CORE" "$CPU" "$MEMORY" "$WORKERS"
           done
 
@@ -197,15 +196,14 @@ $CORE"
               [ "$CLASS" = "normal" ] && continue
               WORKERS=$(yq ".runner[\"$CORE\"].workers[\"$CLASS\"]" config.yaml)
               require_val "runner.$CORE.workers.$CLASS" "$WORKERS"
-              EXPECTED_BRANCHES="$EXPECTED_BRANCHES
-$CORE-$CLASS"
+              EXPECTED_BRANCHES="$EXPECTED_BRANCHES $CORE-$CLASS"
               update_branch "$CORE-$CLASS" "$CPU" "$MEMORY" "$WORKERS"
             done
           done
 
           echo "=== Phase 3: Prune orphan branches ==="
           for REMOTE_BRANCH in $(git ls-remote --heads origin | awk '{print $2}' | sed 's|refs/heads/||' | grep -v '^main$'); do
-            if ! echo "$EXPECTED_BRANCHES" | grep -qxF "$REMOTE_BRANCH"; then
+            if ! echo "$EXPECTED_BRANCHES" | tr ' ' '\n' | grep -qxF "$REMOTE_BRANCH"; then
               echo "  Pruning orphan: $REMOTE_BRANCH"
               git push origin --delete "$REMOTE_BRANCH"
             fi
