@@ -1,6 +1,6 @@
 # Runner: i7-low
 
-[🇺🇸 English](./README.md)
+[🇬🇧 English](./README.md)
 
 | Thông số | Giá trị |
 |----------|---------|
