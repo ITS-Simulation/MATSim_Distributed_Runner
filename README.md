@@ -48,7 +48,7 @@ docker compose up -d --build
 
 ## 📦 Update Process
 
-Updates are triggered automatically from the [`MATSim_Custom`](https://github.com/ITS-Simulation/MATSim_Custom) repository:
-1.  New release in `MATSim_Custom` → Pushes new `Dockerfile` to `main`.
+Updates are triggered automatically from the [`MATSim-Bus-Optimizer`](https://github.com/ITS-Simulation/MATSim-Bus-Optimizer) repository:
+1.  New release in `MATSim-Bus-Optimizer` → Updates `Dockerfile` on `main` (version, checksum).
 2.  `sync-config` workflow triggers → Updates all runner branches.
 3.  Runners simply need to pull and restart.

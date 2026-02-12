@@ -1,6 +1,6 @@
 # MATSim Distributed Runner
 
-[🇺🇸 English](./README.md)
+[🇬🇧 English](./README.md)
 
 Repository này chứa các cấu hình runner cho môi trường mô phỏng phân tán MATSim (MATSim Distributed). Nó đóng vai trò như một trung tâm triển khai, tự động quản lý cấu hình các worker trên nhiều cấu hình phần cứng khác nhau.
 
@@ -48,7 +48,7 @@ docker compose up -d --build
 
 ## 📦 Quy trình Cập nhật
 
-Các bản cập nhật được kích hoạt tự động từ repository [`MATSim_Custom`](https://github.com/ITS-Simulation/MATSim_Custom):
-1.  Release mới trong `MATSim_Custom` → Push `Dockerfile` mới vào branch `main`.
+Các bản cập nhật được kích hoạt tự động từ repository [`MATSim-Bus-Optimizer`](https://github.com/ITS-Simulation/MATSim-Bus-Optimizer):
+1.  Release mới trong `MATSim-Bus-Optimizer` → Cập nhật `Dockerfile` trên branch `main` (phiên bản, checksum).
 2.  Quy trình `sync-config` kích hoạt → Cập nhật tất cả các branch runner.
 3.  Các runner chỉ cần pull về và khởi động lại.
