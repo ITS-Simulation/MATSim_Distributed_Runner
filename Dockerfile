@@ -67,7 +67,7 @@ USER $MAMBA_USER
 WORKDIR /app/client-bro/matsim
 ARG VERSION=v2.15.1
 ARG ZIP=dist-2.15.1.zip
-ARG SHA256=ec62ee2b6fde3fa31d6de089c9f13c215b28d876af522a4b3ba382aa1786b2ea
+ARG SHA256=d2dc71011b49971796d5530feada1d17f7b5c324fe03236579c2b1c8e427931c
 
 # download (cache)
 RUN curl -L -o ${ZIP} \
