@@ -1,6 +1,6 @@
 # Runner: i7-mid
 
-[🇺🇸 English](./README.md)
+[🇬🇧 English](./README.md)
 
 | Thông số | Giá trị |
 |----------|---------|
