@@ -72,7 +72,7 @@ jobs:
           cat > /tmp/readme_vi.template << 'END_TEMPLATE'
           # Runner: __BRANCH__
 
-          [🇺🇸 English](./README.md)
+          [🇬🇧 English](./README.md)
 
           | Thông số | Giá trị |
           |----------|---------|
@@ -104,12 +104,25 @@ jobs:
             exit 0
           fi
 
+          # --- Helpers ---
+          require_val() {
+            local name=$1 val=$2
+            if [ -z "$val" ] || [ "$val" = "null" ]; then
+              echo "::error::Missing required config value: $name"
+              exit 1
+            fi
+          }
+
           git checkout main && git pull origin main
           [ "$SYNC_DOCKERFILE" = "true" ] && cp Dockerfile /tmp/main_Dockerfile
           [ "$SYNC_COMPOSE" = "true" ] && cp docker-compose.yaml /tmp/main_docker_compose.yaml
 
           IP=$(yq '.ip' config.yaml | tr -d '"')
+          require_val "ip" "$IP"
           CORES=$(yq '.runner | keys | .[]' config.yaml)
+          require_val "runner (no cores defined)" "$CORES"
+
+          EXPECTED_BRANCHES=""
 
           generate_readme() {
             local BRANCH=$1 VERSION=$2 SCENARIO=$3 CPU=$4 MEMORY=$5 WORKERS=$6
@@ -161,22 +174,41 @@ jobs:
 
           echo "=== Phase 1: Normal branches ==="
           for CORE in $CORES; do
-            CPU=$(yq ".runner.$CORE.hw.cpu" config.yaml)
-            MEMORY=$(yq ".runner.$CORE.hw.memory" config.yaml | tr -d '"')
-            WORKERS=$(yq ".runner.$CORE.workers.normal" config.yaml)
+            CPU=$(yq ".runner[\"$CORE\"].hw.cpu" config.yaml)
+            require_val "runner.$CORE.hw.cpu" "$CPU"
+            MEMORY=$(yq ".runner[\"$CORE\"].hw.memory" config.yaml | tr -d '"')
+            require_val "runner.$CORE.hw.memory" "$MEMORY"
+            WORKERS=$(yq ".runner[\"$CORE\"].workers.normal" config.yaml)
+            if [ "$WORKERS" = "null" ] || [ -z "$WORKERS" ]; then
+              echo "  ⚠ Skipping $CORE: no 'normal' worker count defined"
+              continue
+            fi
+            EXPECTED_BRANCHES="$EXPECTED_BRANCHES
+$CORE"
             update_branch "$CORE" "$CPU" "$MEMORY" "$WORKERS"
           done
 
           echo "=== Phase 2: Derived branches ==="
           for CORE in $CORES; do
-            CPU=$(yq ".runner.$CORE.hw.cpu" config.yaml)
-            MEMORY=$(yq ".runner.$CORE.hw.memory" config.yaml | tr -d '"')
+            CPU=$(yq ".runner[\"$CORE\"].hw.cpu" config.yaml)
+            MEMORY=$(yq ".runner[\"$CORE\"].hw.memory" config.yaml | tr -d '"')
             
-            for CLASS in $(yq ".runner.$CORE.workers | keys | .[]" config.yaml); do
+            for CLASS in $(yq ".runner[\"$CORE\"].workers | keys | .[]" config.yaml); do
               [ "$CLASS" = "normal" ] && continue
-              WORKERS=$(yq ".runner.$CORE.workers.$CLASS" config.yaml)
+              WORKERS=$(yq ".runner[\"$CORE\"].workers[\"$CLASS\"]" config.yaml)
+              require_val "runner.$CORE.workers.$CLASS" "$WORKERS"
+              EXPECTED_BRANCHES="$EXPECTED_BRANCHES
+$CORE-$CLASS"
               update_branch "$CORE-$CLASS" "$CPU" "$MEMORY" "$WORKERS"
             done
+          done
+
+          echo "=== Phase 3: Prune orphan branches ==="
+          for REMOTE_BRANCH in $(git ls-remote --heads origin | awk '{print $2}' | sed 's|refs/heads/||' | grep -v '^main$'); do
+            if ! echo "$EXPECTED_BRANCHES" | grep -qxF "$REMOTE_BRANCH"; then
+              echo "  Pruning orphan: $REMOTE_BRANCH"
+              git push origin --delete "$REMOTE_BRANCH"
+            fi
           done
 
           echo "✓ Done"
