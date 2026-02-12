@@ -1,8 +1,8 @@
+[![Generate Workers](https://github.com/ITS-Simulation/MATSim_Distributed_Runner/actions/workflows/sync-config.yml/badge.svg)](https://github.com/ITS-Simulation/MATSim_Distributed_Runner/actions/workflows/sync-config.yml)
+
 # MATSim Distributed Runner
 
 [🇬🇧 English](./README.md)
-
-[![Generate Workers](https://github.com/ITS-Simulation/MATSim_Distributed_Runner/actions/workflows/sync-config.yml/badge.svg)](https://github.com/ITS-Simulation/MATSim_Distributed_Runner/actions/workflows/sync-config.yml)
 
 Repo này đóng vai trò trung tâm điều phối cho hệ thống mô phỏng MATSim phân tán. Nó tự động hóa việc quản lý và phân phối cấu hình cho các máy trạm (worker) trên nhiều nền tảng phần cứng khác nhau.
 
