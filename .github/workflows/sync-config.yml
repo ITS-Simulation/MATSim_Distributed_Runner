@@ -34,7 +34,12 @@ jobs:
       - name: Detect changed files
         id: changes
         run: |
-          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "config.yaml docker-compose.yaml Dockerfile")
+          BEFORE="${{ github.event.before }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || [ -z "$BEFORE" ]; then
+            CHANGED="config.yaml docker-compose.yaml Dockerfile .github/workflows/sync-config.yml"
+          else
+            CHANGED=$(git diff --name-only "$BEFORE" HEAD 2>/dev/null || echo "config.yaml docker-compose.yaml Dockerfile")
+          fi
           echo "files: $CHANGED"
           
           # If workflow file changed, do a full sync
