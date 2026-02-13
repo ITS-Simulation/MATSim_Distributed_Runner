@@ -65,23 +65,23 @@ USER $MAMBA_USER
 
 # --- STAGE 4: Download jar file ---
 WORKDIR /app/client-bro/matsim
-ARG VERSION=v2.15.1
-ARG ZIP=dist-2.15.1.zip
-ARG SHA256=a356691387db83d435cc1f0d2093a5a4d2f08c8eae4872d75590cedd54420b3d
 
-# download (cache)
-RUN curl -L -o ${ZIP} \
-    https://github.com/ITS-Simulation/MATSim_Custom/releases/download/${VERSION}/${ZIP}
+# Cache Busting for MATSim JAR
+ADD https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/latest /tmp/matsim_version.json
 
-# verify + unzip
-RUN echo "${SHA256}  ${ZIP}" | sha256sum -c - \
- && unzip ${ZIP} \
- && rm ${ZIP}
+# Download versioned ZIP + SHA256 from the latest release
+RUN set -eux; \
+    ZIP_URL=$(grep -oP '"browser_download_url":\s*"\K[^"]*\.zip' /tmp/matsim_version.json | head -1); \
+    SHA_URL=$(grep -oP '"browser_download_url":\s*"\K[^"]*sha256sum\.txt' /tmp/matsim_version.json | head -1); \
+    ZIP_NAME=$(basename "$ZIP_URL"); \
+    curl -L -o "$ZIP_NAME" "$ZIP_URL"; \
+    curl -L -o sha256sum.txt "$SHA_URL"; \
+    sha256sum -c sha256sum.txt; \
+    unzip "$ZIP_NAME"; \
+    rm "$ZIP_NAME" sha256sum.txt
 
 # --- STAGE 5: Runtime ---
 WORKDIR /app/client-bro
 
 ENTRYPOINT ["micromamba", "run", "-n", "base", "client-bro"]
 CMD ["localhost", "proccess_number"]
-
-
