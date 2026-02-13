@@ -160,7 +160,12 @@ jobs:
             sed -i "s|memory: [^ ]*|memory: $MEMORY|" docker-compose.yaml
             sed -i "s|command: \[\"[^\"]*\", \"[^\"]*\"\]|command: [\"$IP\", \"$WORKERS\"]|" docker-compose.yaml
 
-            VERSION=$(curl -s https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/latest | grep -oP '"name":\s*"\K[^"]+' | head -1 || echo "latest")
+            RELEASE_JSON=$(curl -sH "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/latest)
+            VERSION=$(echo "$RELEASE_JSON" | grep -oP '"tag_name":\s*"\K[^"]+' | head -1)
+            if [ "$VERSION" = "latest" ]; then
+              VERSION=$(echo "$RELEASE_JSON" | grep -oP '"name":\s*"\K[^"]+' | head -1)
+            fi
+            VERSION=${VERSION:-latest}
             SCENARIO=$(grep -oP 'git clone -b \K[^\s]+(?=.* client-bro)' Dockerfile || grep 'client-bro' Dockerfile | grep -oP -- '-b \K[^\s]+' | head -1 || echo "unknown")
 
             generate_readme "$BRANCH" "$VERSION" "$SCENARIO" "$CPU" "$MEMORY" "$WORKERS"
