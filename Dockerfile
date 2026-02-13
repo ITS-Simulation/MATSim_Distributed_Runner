@@ -67,18 +67,25 @@ USER $MAMBA_USER
 WORKDIR /app/client-bro/matsim
 
 # Cache Busting for MATSim JAR
-ADD https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/latest /tmp/matsim_version.json
+ARG MATSIM_VERSION=latest
 
-# Download versioned ZIP + SHA256 from the latest release
+# Download versioned ZIP + SHA256
 RUN set -eux; \
-    ZIP_URL=$(grep -oP '"browser_download_url":\s*"\K[^"]*\.zip' /tmp/matsim_version.json | head -1); \
-    SHA_URL=$(grep -oP '"browser_download_url":\s*"\K[^"]*sha256sum\.txt' /tmp/matsim_version.json | head -1); \
+    if [ "${MATSIM_VERSION}" = "latest" ]; then \
+        META_URL="https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/latest"; \
+    else \
+        META_URL="https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/tags/${MATSIM_VERSION}"; \
+    fi; \
+    curl -L -o /tmp/matsim_version.json "$META_URL"; \
+    ZIP_URL=$(sed -n 's/.*"browser_download_url":[[:space:]]*"\([^"]*\.zip\)".*/\1/p' /tmp/matsim_version.json | head -1); \
+    SHA_URL=$(sed -n 's/.*"browser_download_url":[[:space:]]*"\([^"]*sha256sum\.txt\)".*/\1/p' /tmp/matsim_version.json | head -1); \
+    [ -n "$ZIP_URL" ] && [ -n "$SHA_URL" ]; \
     ZIP_NAME=$(basename "$ZIP_URL"); \
     curl -L -o "$ZIP_NAME" "$ZIP_URL"; \
     curl -L -o sha256sum.txt "$SHA_URL"; \
     sha256sum -c sha256sum.txt; \
     unzip "$ZIP_NAME"; \
-    rm "$ZIP_NAME" sha256sum.txt
+    rm "$ZIP_NAME" sha256sum.txt /tmp/matsim_version.json
 
 # --- STAGE 5: Runtime ---
 WORKDIR /app/client-bro
