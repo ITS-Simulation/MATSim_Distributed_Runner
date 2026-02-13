@@ -4,7 +4,7 @@
 
 | Thông số | Giá trị |
 |----------|---------|
-| Phiên bản |  |
+| Phiên bản | latest |
 | Kịch bản | v2.3.0 |
 | CPU | 26.0 |
 | Bộ nhớ | 10G |
