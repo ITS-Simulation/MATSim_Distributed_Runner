@@ -96,6 +96,25 @@ jobs:
           sed -i 's/^          //' /tmp/readme_en.template
           sed -i 's/^          //' /tmp/readme_vi.template
 
+      - name: Resolve MATSim version
+        id: matsim
+        run: |
+          RUNNER_VER=$(sed -n 's/^ARG RUNNER_VER=\(.*\)$/\1/p' Dockerfile | tr -d ' \r' | head -1)
+          RUNNER_VER=${RUNNER_VER:-latest}
+          
+          if [ "$RUNNER_VER" = "latest" ]; then
+            RELEASE_JSON=$(curl -sfLH "Authorization: Bearer ${{ secrets.MATSIM_RUNNER_PAT }}" \
+              https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/latest)
+            if [ $? -ne 0 ] || [ -z "$RELEASE_JSON" ]; then
+              echo "::error::Failed to fetch MATSim release info from GitHub API"
+              exit 1
+            fi
+            VERSION=$(echo "$RELEASE_JSON" | jq -r '.name // .tag_name // "latest"')
+          else
+            VERSION="$RUNNER_VER"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Sync to all branches
         run: |
           set -e
@@ -160,22 +179,8 @@ jobs:
             sed -i "s|memory: [^ ]*|memory: $MEMORY|" docker-compose.yaml
             sed -i "s|command: \[\"[^\"]*\", \"[^\"]*\"\]|command: [\"$IP\", \"$WORKERS\"]|" docker-compose.yaml
 
-            MATSIM_ARG=$(sed -n 's/^ARG MATSIM_VERSION=\(.*\)$/\1/p' Dockerfile | tr -d ' \r' | head -1)
-            [ -z "$MATSIM_ARG" ] && MATSIM_ARG=$(sed -n 's/^ARG VERSION=\(.*\)$/\1/p' Dockerfile | tr -d ' \r' | head -1)
-            MATSIM_ARG=${MATSIM_ARG:-latest}
-
-            if [ "$MATSIM_ARG" = "latest" ]; then
-              RELEASE_JSON=$(curl -sH "Authorization: Bearer ${{ secrets.MATSIM_RUNNER_PAT }}" https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/latest)
-              VERSION=$(echo "$RELEASE_JSON" | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
-              if [ "$VERSION" = "latest" ]; then
-                VERSION=$(echo "$RELEASE_JSON" | sed -n 's/.*"name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
-              fi
-            else
-              VERSION="$MATSIM_ARG"
-            fi
-            VERSION=${VERSION:-latest}
-            SCENARIO=$(sed -n 's/.*git clone -b \([^ ]*\) .*client-bro.*/\1/p' Dockerfile | head -1)
-            [ -z "$SCENARIO" ] && SCENARIO=$(sed -n 's/.*-b \([^ ]*\).*/\1/p' Dockerfile | head -1)
+            VERSION="${{ steps.matsim.outputs.version }}"
+            SCENARIO=$(sed -n 's|.*client-bro/git/refs/tags/\([^ ]*\).*|\1|p' Dockerfile | head -1)
             SCENARIO=${SCENARIO:-unknown}
 
             generate_readme "$BRANCH" "$VERSION" "$SCENARIO" "$CPU" "$MEMORY" "$WORKERS"
