@@ -11,6 +11,7 @@ RUN dnf install -y --allowerasing \
         git \
         curl \
         unzip \
+        jq \
         ca-certificates && \
     dnf clean all && \
     rm -rf /var/cache/dnf
@@ -37,7 +38,7 @@ RUN duckdb -c "INSTALL arrow FROM community; LOAD arrow;"
 
 # Cache Busting for Genet
 ADD https://api.github.com/repos/arup-group/genet/git/refs/heads/main /tmp/genet_version.json
-RUN git clone -b main https://github.com/arup-group/genet genet
+RUN git clone -b main --single-branch --depth 1 https://github.com/arup-group/genet genet
 
 # Install requirements
 RUN micromamba install -y -n base -c conda-forge -c city-modelling-lab \
@@ -67,28 +68,21 @@ USER $MAMBA_USER
 WORKDIR /app/client-bro/matsim
 
 # Cache Busting for MATSim JAR
-ARG MATSIM_VERSION=latest
+ARG RUNNER_VER=latest
 
-# Download versioned ZIP + SHA256
+# Download versioned ZIP (integrity verified via API digest)
 RUN set -eux; \
-    if [ "${MATSIM_VERSION}" = "latest" ]; then \
-        META_URL="https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/latest"; \
-    else \
-        META_URL="https://api.github.com/repos/ITS-Simulation/MATSim_Custom/releases/tags/${MATSIM_VERSION}"; \
-    fi; \
-    curl -L -o /tmp/matsim_version.json "$META_URL"; \
-    ZIP_URL=$(sed -n 's/.*"browser_download_url":[[:space:]]*"\([^"]*\.zip\)".*/\1/p' /tmp/matsim_version.json | head -1); \
-    SHA_URL=$(sed -n 's/.*"browser_download_url":[[:space:]]*"\([^"]*sha256sum\.txt\)".*/\1/p' /tmp/matsim_version.json | head -1); \
-    [ -n "$ZIP_URL" ] && [ -n "$SHA_URL" ]; \
-    ZIP_NAME=$(basename "$ZIP_URL"); \
-    curl -L -o "$ZIP_NAME" "$ZIP_URL"; \
-    curl -L -o sha256sum.txt "$SHA_URL"; \
-    sha256sum -c sha256sum.txt; \
-    unzip "$ZIP_NAME"; \
-    rm "$ZIP_NAME" sha256sum.txt /tmp/matsim_version.json
+    SUFFIX=$([ "${RUNNER_VER}" = "latest" ] && echo "latest" || echo "tags/${RUNNER_VER}"); \
+    META=$(curl -fsSL "https://api.github.com/repos/ITS-Simulation/MATSim-Bus-Optimizer/releases/${SUFFIX}"); \
+    ZIP_URL=$(printf '%s' "$META" | jq -re '.assets[] | select(.name | endswith(".zip")) | .browser_download_url'); \
+    ZIP_SHA=$(printf '%s' "$META" | jq -re '.assets[] | select(.name | endswith(".zip")) | .digest | ltrimstr("sha256:")'); \
+    curl -fsSL -o "$(basename "$ZIP_URL")" "$ZIP_URL"; \
+    echo "${ZIP_SHA}  $(basename "$ZIP_URL")" | sha256sum -c -; \
+    unzip "$(basename "$ZIP_URL")"; \
+    rm "$(basename "$ZIP_URL")"
 
 # --- STAGE 5: Runtime ---
 WORKDIR /app/client-bro
 
 ENTRYPOINT ["micromamba", "run", "-n", "base", "client-bro"]
-CMD ["localhost", "proccess_number"]
+CMD ["localhost", "process_number"]
